@@ -1,0 +1,61 @@
+name: Auto Assignment
+
+on:
+  issues:
+    types: [opened, labeled]
+  pull_request:
+    types: [opened, labeled]
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign Ops/Infra Issues to Aegis
+        if: |
+          contains(github.event.issue.labels.*.name, 'ops') || 
+          contains(github.event.issue.labels.*.name, 'deploy') ||
+          contains(github.event.issue.labels.*.name, 'infrastructure') ||
+          contains(github.event.pull_request.labels.*.name, 'ops') ||
+          contains(github.event.pull_request.labels.*.name, 'deploy') ||
+          contains(github.event.pull_request.labels.*.name, 'infrastructure')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number || context.payload.pull_request.number;
+            github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              assignees: ['aegis-molt']
+            });
+
+      - name: Assign Testing to Captain Nemo
+        if: |
+          contains(github.event.issue.labels.*.name, 'test') || 
+          contains(github.event.issue.labels.*.name, 'testing') ||
+          contains(github.event.issue.labels.*.name, 'qa') ||
+          contains(github.event.pull_request.labels.*.name, 'test') ||
+          contains(github.event.pull_request.labels.*.name, 'testing') ||
+          contains(github.event.pull_request.labels.*.name, 'qa')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number || context.payload.pull_request.number;
+            github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              assignees: ['captain-nemo-bot']
+            });
+
+      - name: Request Review from Stellar
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ['Stellar-Hogarthian']
+            });
