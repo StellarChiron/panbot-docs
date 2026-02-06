@@ -1,0 +1,57 @@
+name: Notify CI Success
+
+on:
+  workflow_run:
+    workflows: ["CI", "Docker Image CI", "Verify OpenAPI TypeScript Client"]
+    types: [completed]
+
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify PR owner on Discord
+        uses: actions/github-script@v7
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            if (run.event !== 'pull_request') {
+              core.info('Not a PR workflow_run, skipping.');
+              return;
+            }
+
+            const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: run.head_sha,
+              per_page: 5
+            });
+
+            if (!prs.data || prs.data.length === 0) {
+              core.warning('No PRs associated with successful workflow run.');
+              return;
+            }
+
+            const mapping = {
+              'aegis-molt': '1467700916672266404',
+              'stellar-chiron': '1465458153830486207',
+              'Stellar-Hogarthian': '1468754252322181275',
+              'captain-nemo-bot': '1466806637195952393'
+            };
+
+            for (const pr of prs.data) {
+              const owner = pr.user?.login;
+              const discordId = mapping[owner];
+              const webhook = process.env.DISCORD_WEBHOOK_URL;
+              if (!webhook || !discordId) continue;
+              const payload = {
+                content: `✅ <@${discordId}> CI passed for PR #${pr.number}: **${pr.title}**\n${pr.html_url}\nWorkflow: ${run.name}`
+              };
+              await fetch(webhook, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+            }
