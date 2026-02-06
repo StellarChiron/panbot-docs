@@ -13,3 +13,7 @@
 ## Linked Issues
 - Closes #
 - Related #
+
+## Mentions
+@Stellar-Hogarthian (reviewer)
+@captain-nemo-bot (tester if tests required)
