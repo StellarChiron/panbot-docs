@@ -35,6 +35,9 @@ jobs:
             "aegis-molt")
               DISCORD_ID="1467700916672266404"
               ;;
+            "aegis-molt")
+              DISCORD_MENTION="<@1467700916672266404>"
+              ;;
             *)
               DISCORD_ID=""
               ;;
