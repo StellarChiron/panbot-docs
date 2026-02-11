@@ -8,7 +8,7 @@ on:
 jobs:
   notify:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'enkira-ci-runner' || 'ubuntu-latest' }}
     steps:
       - name: Notify PR owner on Discord
         uses: actions/github-script@v7
