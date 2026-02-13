@@ -16,13 +16,14 @@ description: Current and planned authentication architecture.
 | Token revocation | `users.token_version` field |
 | DB validation | Optional via `AUTH_VALIDATE_DB_ON_REQUEST` flag |
 
-### Current State: Hybrid Multi-Tenant Auth
+### Multi-Tenant Auth (UserBusinessDB)
 
-- JWTs are evolving toward a `business_ids` list for forward compatibility.
-- Database **still stores a single** `business_id` (UserBusinessDB migration is pending).
-- Expect mixed usage until Issue #29 is completed.
+- `UserBusinessDB` is the source of truth for user-to-business mappings.
+- `UserDB.business_id` column has been **removed** — all business access is resolved via `UserBusinessDB`.
+- `get_current_user()` returns both `business_id` (primary) and `business_ids` (all accessible).
+- Realtime/Centrifugo token requests check against the full `business_ids` list.
 
-### Desktop App
+### Desktop App (JWT Login)
 
 | Feature | Implementation |
 |---------|---------------|
@@ -31,6 +32,18 @@ description: Current and planned authentication architecture.
 | Auto-refresh | `AutoRefreshTokenManager` with JWT config from backend |
 | Business context | From JWT claims (`business_id`) |
 | Realtime token | Separate JWT via POST /api/v1/realtime/token |
+
+### Desktop App (Device + PIN Login)
+
+| Feature | Implementation |
+|---------|---------------|
+| Device identity | One-time pairing code → permanent device token |
+| Staff identity | 4-6 digit PIN per staff member per business |
+| Token storage | `device_token` + `operator_session_token` in localStorage |
+| Session lifetime | 8 hours (operator session JWT) |
+| Brute-force protection | 5 attempts then 15-minute lockout |
+
+See [Device Authentication guide](/guides/device-authentication/) for the complete flow.
 
 ### Web Dashboard
 
@@ -79,8 +92,8 @@ Desktop app fetches these settings from `/api/v1/realtime/status` for consistent
 
 | Role | Login Method | Access |
 |------|-------------|--------|
-| STAFF | Phone number | Single business, desktop app |
-| OWNER | Email/OAuth | Multiple businesses, web + desktop |
+| STAFF | PIN on paired device | Single business, desktop app |
+| OWNER | Email/OAuth or PIN | Multiple businesses, web + desktop |
 | ADMIN | Email/OAuth | All businesses, system settings |
 
-Target: Per-business roles via `UserBusinessDB.role`, with OWNER controlling staff access.
+Roles are stored per-business in `UserBusinessDB.role`. Owners manage staff access and PIN assignment.
