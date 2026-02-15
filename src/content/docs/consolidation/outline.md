@@ -1,3 +1,8 @@
+---
+title: "Architecture Documentation Consolidation Outline"
+description: "Outline for consolidating architecture docs (Issue #10)."
+---
+
 # Architecture Documentation Consolidation Outline (Issue #10)
 
 ## Goal
